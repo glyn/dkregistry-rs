@@ -41,22 +41,22 @@ static DEFAULT_SCHEME: &str = "docker";
 
 /// Image version, either a tag or a digest.
 #[derive(Clone)]
-pub enum Version {
-    Tag(String),
-    Digest(String, String),
+pub struct Version {
+    tag: Option<String>,
+    digest: Option<(String, String)>
 }
 
 impl str::FromStr for Version {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let v = match s.chars().nth(0) {
-            Some(':') => Version::Tag(s.trim_start_matches(':').to_string()),
+            Some(':') => Version{tag: Some(s.trim_start_matches(':').to_string()), digest: None},
             Some('@') => {
                 let r: Vec<&str> = s.trim_start_matches('@').splitn(2, ':').collect();
                 if r.len() != 2 {
                     bail!("wrong digest format");
                 };
-                Version::Digest(r[0].to_string(), r[1].to_string())
+                Version{tag: None, digest: Some((r[0].to_string(), r[1].to_string()))}
             }
             Some(_) => bail!("unknown prefix"),
             None => bail!("too short"),
